@@ -3,684 +3,466 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>지존 길드 성장률 대시보드</title>
+<title>지존길드 분석 (6/29)</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=Inter:wght@400;500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0d1117;--bg2:#161b27;--bg3:#1e2636;
+  --border:rgba(255,255,255,0.07);
+  --text:#dde3f0;--muted:#6b7a99;
+  --acc:#5b7fff;--acc2:#34d39a;--acc3:#f5a623;--danger:#ff5f5f;
+}
+body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text);font-size:13px;line-height:1.6}
+header{padding:1.8rem 2rem 0;border-bottom:1px solid var(--border)}
+.eyebrow{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--acc);margin-bottom:5px}
+h1{font-size:22px;font-weight:700;color:#fff}
+.subtitle{font-size:11px;color:var(--muted);margin-top:4px;margin-bottom:1.2rem}
 
-  :root {
-    --bg: #0f1117;
-    --bg2: #1a1d27;
-    --bg3: #22263a;
-    --border: rgba(255,255,255,0.08);
-    --border2: rgba(255,255,255,0.14);
-    --text: #e8eaf0;
-    --text2: #8b90a8;
-    --text3: #555c78;
-    --accent: #6c72f5;
-    --accent2: #4fc3a1;
-    --red: #f06073;
-    --amber: #f5a623;
-    --green: #4fc3a1;
-    --blue: #6c72f5;
-    --purple: #a78bfa;
-    --guild-g: #6c72f5;
-    --guild-t: #4fc3a1;
-    --guild-s: #f5a623;
-    --guild-j: #f06073;
-  }
+/* 탭 */
+.tabs{display:flex;gap:0;border-bottom:1px solid var(--border);margin-top:.5rem}
+.tab{padding:.65rem 1.4rem;font-size:13px;font-weight:500;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .15s;user-select:none;background:none;border-top:none;border-left:none;border-right:none;font-family:inherit}
+.tab:hover{color:var(--text)}
+.tab.active{color:#fff;border-bottom-color:var(--acc)}
 
-  * { box-sizing: border-box; margin: 0; padding: 0; }
+.main{padding:1.4rem 2rem}
+.tab-panel{display:none}.tab-panel.active{display:block}
 
-  body {
-    font-family: 'Noto Sans KR', 'Inter', sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    min-height: 100vh;
-    line-height: 1.6;
-  }
+.metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(148px,1fr));gap:10px;margin-bottom:1.4rem}
+.mc{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:.85rem 1rem}
+.mc.a1{border-top:2px solid var(--acc)}.mc.a2{border-top:2px solid var(--acc2)}.mc.a3{border-top:2px solid var(--acc3)}.mc.a4{border-top:2px solid var(--danger)}
+.mc-lbl{font-size:10px;color:var(--muted);margin-bottom:3px}
+.mc-val{font-size:19px;font-weight:700;color:#fff}
+.mc-sub{font-size:10px;color:var(--muted);margin-top:3px}
 
-  header {
-    padding: 2.5rem 2rem 1.5rem;
-    border-bottom: 1px solid var(--border);
-    display: flex;
-    align-items: flex-end;
-    gap: 1.5rem;
-    flex-wrap: wrap;
-    background: linear-gradient(135deg, rgba(108,114,245,0.08) 0%, transparent 60%);
-  }
+.charts-row{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.4rem}
+.chart-card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:1rem}
+.chart-card h3{font-size:11px;color:var(--muted);margin-bottom:.7rem}
 
-  .header-title {
-    flex: 1;
-    min-width: 200px;
-  }
+.sec-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:.6rem;flex-wrap:wrap;gap:.5rem}
+.sec-head h2{font-size:13px;font-weight:600;color:#fff}
+.filters{display:flex;gap:5px;flex-wrap:wrap}
+.fbtn{font-size:11px;padding:3px 10px;border-radius:99px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;font-family:inherit;transition:all .15s}
+.fbtn:hover{border-color:var(--acc);color:var(--acc)}
+.fbtn.active{background:var(--acc);border-color:var(--acc);color:#fff}
 
-  .header-eyebrow {
-    font-size: 11px;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: var(--accent);
-    font-weight: 500;
-    margin-bottom: 0.4rem;
-  }
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:11.5px}
+thead th{padding:6px 8px;color:var(--muted);font-weight:500;font-size:10px;text-align:left;border-bottom:1px solid var(--border);white-space:nowrap;cursor:pointer;user-select:none}
+thead th:hover{color:var(--text)}
+thead th.sorted{color:var(--acc)}
+tbody tr{border-bottom:1px solid rgba(255,255,255,0.04);transition:background .1s}
+tbody tr:hover{background:var(--bg3)}
+td{padding:5px 8px;white-space:nowrap;vertical-align:middle}
+.nick{font-weight:600;color:#fff}
+.pos{color:#34d39a}.neg{color:#ff5f5f}.neu{color:var(--muted)}
+.rank-badge{display:inline-flex;align-items:center;justify-content:center;min-width:24px;height:20px;border-radius:4px;font-size:10px;font-weight:700;padding:0 5px}
+.badge-up{background:rgba(52,211,154,0.12);color:#34d39a}
+.badge-dn{background:rgba(255,95,95,0.12);color:#ff5f5f}
+.badge-eq{background:rgba(107,122,153,0.12);color:#6b7a99}
+.badge-new{background:rgba(245,166,35,0.14);color:#f5a623}
 
-  header h1 {
-    font-size: clamp(22px, 4vw, 32px);
-    font-weight: 700;
-    letter-spacing: -0.02em;
-    color: var(--text);
-  }
-
-  .header-sub {
-    font-size: 13px;
-    color: var(--text2);
-    margin-top: 0.3rem;
-  }
-
-  .header-meta {
-    display: flex;
-    gap: 1rem;
-    flex-wrap: wrap;
-  }
-
-  .meta-pill {
-    background: var(--bg2);
-    border: 1px solid var(--border);
-    border-radius: 99px;
-    padding: 4px 14px;
-    font-size: 12px;
-    color: var(--text2);
-  }
-
-  .main { max-width: 1100px; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
-
-  .tab-row {
-    display: flex;
-    gap: 6px;
-    margin-bottom: 2rem;
-    flex-wrap: wrap;
-  }
-
-  .tab {
-    padding: 8px 20px;
-    border-radius: 99px;
-    border: 1px solid var(--border2);
-    background: transparent;
-    cursor: pointer;
-    font-size: 13px;
-    color: var(--text2);
-    font-family: inherit;
-    transition: all 0.15s;
-  }
-
-  .tab:hover { border-color: var(--accent); color: var(--text); }
-
-  .tab.active {
-    background: var(--accent);
-    border-color: var(--accent);
-    color: #fff;
-    font-weight: 500;
-  }
-
-  .controls {
-    display: flex;
-    gap: 10px;
-    margin-bottom: 1.5rem;
-    flex-wrap: wrap;
-    align-items: center;
-  }
-
-  .controls label {
-    font-size: 12px;
-    color: var(--text3);
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-  }
-
-  select {
-    font-size: 13px;
-    padding: 6px 12px;
-    border-radius: 8px;
-    border: 1px solid var(--border2);
-    background: var(--bg2);
-    color: var(--text);
-    font-family: inherit;
-    cursor: pointer;
-    outline: none;
-    transition: border-color 0.15s;
-  }
-
-  select:focus { border-color: var(--accent); }
-
-  .summary-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-    gap: 12px;
-    margin-bottom: 1.8rem;
-  }
-
-  .summary-card {
-    background: var(--bg2);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 1rem 1.25rem;
-    transition: border-color 0.15s;
-  }
-
-  .summary-card:hover { border-color: var(--border2); }
-
-  .summary-card .val {
-    font-size: 24px;
-    font-weight: 700;
-    letter-spacing: -0.02em;
-    color: var(--text);
-  }
-
-  .summary-card .lbl {
-    font-size: 11px;
-    color: var(--text3);
-    margin-top: 3px;
-    letter-spacing: 0.04em;
-  }
-
-  .table-wrap { overflow-x: auto; border-radius: 12px; border: 1px solid var(--border); }
-
-  table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 640px; }
-
-  thead th {
-    background: var(--bg2);
-    text-align: left;
-    padding: 10px 14px;
-    font-size: 11px;
-    font-weight: 500;
-    color: var(--text3);
-    letter-spacing: 0.07em;
-    text-transform: uppercase;
-    border-bottom: 1px solid var(--border);
-    cursor: pointer;
-    user-select: none;
-    white-space: nowrap;
-  }
-
-  thead th:hover { color: var(--text2); }
-
-  td {
-    padding: 10px 14px;
-    border-bottom: 1px solid var(--border);
-    vertical-align: middle;
-    color: var(--text);
-  }
-
-  tr:last-child td { border-bottom: none; }
-  tr:hover td { background: rgba(255,255,255,0.02); }
-
-  .guild-tag {
-    display: inline-block;
-    padding: 2px 8px;
-    border-radius: 99px;
-    font-size: 10px;
-    font-weight: 500;
-    border: 1px solid;
-    white-space: nowrap;
-  }
-
-  .badge {
-    display: inline-block;
-    padding: 3px 9px;
-    border-radius: 99px;
-    font-size: 11px;
-    font-weight: 500;
-    white-space: nowrap;
-  }
-
-  .badge-new { background: rgba(108,114,245,0.15); color: #a5a8fc; border: 1px solid rgba(108,114,245,0.3); }
-  .badge-up-high { background: rgba(79,195,161,0.15); color: #4fc3a1; border: 1px solid rgba(79,195,161,0.3); }
-  .badge-up { background: rgba(79,195,161,0.08); color: #3da88a; border: 1px solid rgba(79,195,161,0.2); }
-  .badge-flat { background: rgba(139,144,168,0.1); color: var(--text3); border: 1px solid var(--border); }
-  .badge-down { background: rgba(240,96,115,0.12); color: #f06073; border: 1px solid rgba(240,96,115,0.25); }
-
-  .bar-wrap { display: flex; align-items: center; gap: 8px; min-width: 80px; }
-  .bar-bg { flex: 1; height: 5px; background: rgba(255,255,255,0.06); border-radius: 3px; overflow: hidden; }
-  .bar-fill { height: 100%; border-radius: 3px; transition: width 0.3s ease; }
-
-  .rank-num { color: var(--text3); font-size: 12px; font-variant-numeric: tabular-nums; }
-
-  .section { display: none; }
-  .section.active { display: block; }
-
-  .nickname { font-weight: 500; }
-
-  .val-main { font-variant-numeric: tabular-nums; }
-  .val-prev { color: var(--text3); font-size: 12px; }
-
-  footer {
-    text-align: center;
-    padding: 2rem;
-    font-size: 11px;
-    color: var(--text3);
-    border-top: 1px solid var(--border);
-    margin-top: 4rem;
-  }
-
-  @media (max-width: 640px) {
-    header { padding: 1.5rem 1rem 1rem; }
-    .main { padding: 1.25rem 1rem 3rem; }
-    .summary-card .val { font-size: 20px; }
-  }
+.note{margin-top:1rem;padding:.85rem 1rem;background:var(--bg2);border:1px solid var(--border);border-radius:8px;font-size:11px;color:var(--muted);line-height:1.9}
+.note strong{color:var(--text)}
+@media(max-width:700px){.charts-row{grid-template-columns:1fr}header,.main{padding:1rem}}
 </style>
 </head>
 <body>
-
 <header>
-  <div class="header-title">
-    <div class="header-eyebrow">Guild Analytics</div>
-    <h1>지존 길드 성장률 대시보드</h1>
-    <p class="header-sub">전투력 &amp; 토벌전 점수 변화 추적 · 6/8 → 6/15 기준</p>
-  </div>
-  <div class="header-meta">
-    <span class="meta-pill">지존길드</span>
-    <span class="meta-pill">지존꿀떡</span>
-    <span class="meta-pill">지존좀쓴</span>
-    <span class="meta-pill">지존꿀잼</span>
+  <div class="eyebrow">메이플키우기 · 지존길드</div>
+  <h1>길드 분석 대시보드</h1>
+  <p class="subtitle">업데이트: 6/29 · 토벌전 점수 및 전투력 주차별 순위 등락</p>
+  <div class="tabs">
+    <button class="tab active" data-tab="score">⚔️ 토벌전 점수</button>
+    <button class="tab" data-tab="bp">💪 전투력</button>
   </div>
 </header>
 
 <div class="main">
-  <div class="tab-row">
-    <button class="tab active" onclick="switchTab('power')">⚔️ 전투력 성장</button>
-    <button class="tab" onclick="switchTab('tobeol')">🏹 토벌전 점수 성장</button>
-  </div>
 
-  <!-- 전투력 -->
-  <div id="sec-power" class="section active">
-    <div class="controls">
-      <label>길드</label>
-      <select id="filter-guild-power" onchange="renderPower()">
-        <option value="all">전체</option>
-        <option value="지존길드">지존길드</option>
-        <option value="지존꿀떡">지존꿀떡</option>
-        <option value="지존좀쓴">지존좀쓴</option>
-        <option value="지존꿀잼">지존꿀잼</option>
-      </select>
-      <label style="margin-left:8px;">정렬</label>
-      <select id="sort-power" onchange="renderPower()">
-        <option value="rate-desc">성장률 높은순</option>
-        <option value="rate-asc">성장률 낮은순</option>
-        <option value="power-desc">현재 전투력 높은순</option>
-        <option value="level-desc">레벨 높은순</option>
-      </select>
+  <!-- ===== 토벌전 점수 탭 ===== -->
+  <div class="tab-panel active" id="panel-score">
+    <div class="metrics" id="score-metrics"></div>
+    <div class="charts-row">
+      <div class="chart-card">
+        <h3>주차별 평균 성장률</h3>
+        <div style="position:relative;height:185px"><canvas id="score-growth-chart"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <h3>6/28 기준 상위 15명 점수</h3>
+        <div style="position:relative;height:185px"><canvas id="score-top-chart"></canvas></div>
+      </div>
     </div>
-    <div id="summary-power" class="summary-grid"></div>
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th style="width:36px;">#</th>
-            <th style="width:80px;">길드</th>
-            <th style="width:110px;">닉네임</th>
-            <th style="width:50px;">레벨</th>
-            <th style="width:130px;">6/15 전투력</th>
-            <th style="width:130px;">6/8 전투력</th>
-            <th style="width:140px;">성장</th>
-            <th style="width:90px;">상태</th>
-          </tr>
-        </thead>
-        <tbody id="tbody-power"></tbody>
-      </table>
+    <div class="sec-head">
+      <h2>개인별 순위 등락 (6/28 점수 기준 내림차순)</h2>
+      <div class="filters" id="score-filters">
+        <button class="fbtn active" data-f="all">전체</button>
+        <button class="fbtn" data-f="up">▲ 상승</button>
+        <button class="fbtn" data-f="dn">▼ 하락</button>
+        <button class="fbtn" data-f="eq">— 유지</button>
+        <button class="fbtn" data-f="new">NEW</button>
+      </div>
+    </div>
+    <div class="table-wrap"><table><thead id="score-thead"></thead><tbody id="score-tbody"></tbody></table></div>
+    <div class="note">
+      <strong>점수 순위 산정</strong> · 각 날짜 점수를 내림차순 정렬해 순위 산정 · <strong>등락</strong>: 6/21 순위 − 6/28 순위 (양수 = 상승) · <strong>NEW</strong>: 6/21 점수 0 또는 미참가
     </div>
   </div>
 
-  <!-- 토벌전 -->
-  <div id="sec-tobeol" class="section">
-    <div class="controls">
-      <label>길드</label>
-      <select id="filter-guild-tobeol" onchange="renderTobeol()">
-        <option value="all">전체</option>
-        <option value="지존길드">지존길드</option>
-        <option value="지존꿀떡">지존꿀떡</option>
-        <option value="지존좀쓴">지존좀쓴</option>
-        <option value="지존꿀잼">지존꿀잼</option>
-      </select>
-      <label style="margin-left:8px;">정렬</label>
-      <select id="sort-tobeol" onchange="renderTobeol()">
-        <option value="rate-desc">성장률 높은순</option>
-        <option value="rate-asc">성장률 낮은순</option>
-        <option value="score-desc">최근 점수 높은순</option>
-        <option value="level-desc">레벨 높은순</option>
-      </select>
+  <!-- ===== 전투력 탭 ===== -->
+  <div class="tab-panel" id="panel-bp">
+    <div class="metrics" id="bp-metrics"></div>
+    <div class="charts-row">
+      <div class="chart-card">
+        <h3>주차별 평균 전투력 성장률</h3>
+        <div style="position:relative;height:185px"><canvas id="bp-growth-chart"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <h3>6/29 기준 상위 15명 전투력</h3>
+        <div style="position:relative;height:185px"><canvas id="bp-top-chart"></canvas></div>
+      </div>
     </div>
-    <div id="summary-tobeol" class="summary-grid"></div>
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th style="width:36px;">#</th>
-            <th style="width:80px;">길드</th>
-            <th style="width:110px;">닉네임</th>
-            <th style="width:50px;">레벨</th>
-            <th style="width:130px;">6/14 점수</th>
-            <th style="width:130px;">6/7 점수</th>
-            <th style="width:140px;">성장</th>
-            <th style="width:90px;">상태</th>
-          </tr>
-        </thead>
-        <tbody id="tbody-tobeol"></tbody>
-      </table>
+    <div class="sec-head">
+      <h2>개인별 전투력 순위 등락 (6/29 기준 내림차순)</h2>
+      <div class="filters" id="bp-filters">
+        <button class="fbtn active" data-f="all">전체</button>
+        <button class="fbtn" data-f="up">▲ 상승</button>
+        <button class="fbtn" data-f="dn">▼ 하락</button>
+        <button class="fbtn" data-f="eq">— 유지</button>
+        <button class="fbtn" data-f="new">NEW</button>
+      </div>
+    </div>
+    <div class="table-wrap"><table><thead id="bp-thead"></thead><tbody id="bp-tbody"></tbody></table></div>
+    <div class="note">
+      <strong>전투력 순위 산정</strong> · 각 날짜 전투력을 내림차순 정렬해 순위 산정 · <strong>등락</strong>: 6/22 순위 − 6/29 순위 (양수 = 상승) · <strong>성장률</strong>: 전주 대비 전투력 증가율 · <strong>NEW</strong>: 이전 데이터 없음
     </div>
   </div>
-</div>
 
-<footer>지존 길드 내부 자료 · 6/15 기준 · 외부 무단 공유 금지</footer>
+</div><!-- /main -->
 
 <script>
-const guildColor = {
-  '지존길드': '#6c72f5',
-  '지존꿀떡': '#4fc3a1',
-  '지존좀쓴': '#f5a623',
-  '지존꿀잼': '#f06073'
-};
+// ── 공통 유틸 ──────────────────────────────────────────────
+const pct  = (a,b) => (a>0&&b>0) ? (a-b)/b*100 : null;
+const fmtP = v => v===null ? '-' : (v>=0?'+':'')+v.toFixed(1)+'%';
+const fmtA = (v,unit) => v>0 ? (v/1e8).toFixed(1)+unit : '-';
 
-const powerData = [
-  {g:'지존길드',n:'포항엄석대',lv:106,p1:131156300000000,p0:0},
-  {g:'지존길드',n:'지존쫀파',lv:107,p1:119858900000000,p0:91384200000000},
-  {g:'지존길드',n:'협의',lv:107,p1:91006600000000,p0:57547500000000},
-  {g:'지존길드',n:'엘르가든',lv:105,p1:95897900000000,p0:68406300000000},
-  {g:'지존길드',n:'지존빼앙',lv:105,p1:81858300000000,p0:65902000000000},
-  {g:'지존길드',n:'변신술사',lv:106,p1:81121100000000,p0:81121100000000},
-  {g:'지존길드',n:'지존순찌',lv:105,p1:63631200000000,p0:49892600000000},
-  {g:'지존길드',n:'댜니',lv:105,p1:49165100000000,p0:32882200000000},
-  {g:'지존길드',n:'기본이리',lv:106,p1:44612700000000,p0:26502400000000},
-  {g:'지존길드',n:'마카롱롱',lv:106,p1:44726600000000,p0:27733400000000},
-  {g:'지존길드',n:'기뽐',lv:105,p1:35359900000000,p0:28392500000000},
-  {g:'지존길드',n:'타개',lv:106,p1:35240500000000,p0:24995100000000},
-  {g:'지존길드',n:'흐스',lv:104,p1:21262400000000,p0:12487000000000},
-  {g:'지존길드',n:'유플러스',lv:104,p1:18247600000000,p0:11010700000000},
-  {g:'지존길드',n:'대좀이',lv:103,p1:31647500000000,p0:20821500000000},
-  {g:'지존길드',n:'마갤',lv:105,p1:29024500000000,p0:19977100000000},
-  {g:'지존길드',n:'고숨도칭',lv:103,p1:28308200000000,p0:21379400000000},
-  {g:'지존길드',n:'모짜리코베르',lv:104,p1:30006500000000,p0:23892900000000},
-  {g:'지존길드',n:'뉴럴',lv:104,p1:29888000000000,p0:27079100000000},
-  {g:'지존길드',n:'파울',lv:104,p1:20582300000000,p0:15264700000000},
-  {g:'지존길드',n:'Doham',lv:103,p1:28819900000000,p0:25185700000000},
-  {g:'지존길드',n:'미니주니',lv:103,p1:36168800000000,p0:31165200000000},
-  {g:'지존길드',n:'미래에셋생명',lv:104,p1:14269300000000,p0:10922000000000},
-  {g:'지존길드',n:'레인져보우',lv:101,p1:14022200000000,p0:10595800000000},
-  {g:'지존길드',n:'나나나난나',lv:103,p1:11780200000000,p0:10236500000000},
-  {g:'지존길드',n:'지존빵민',lv:103,p1:15282600000000,p0:12934800000000},
-  {g:'지존길드',n:'뿡쓰',lv:104,p1:26071600000000,p0:23759500000000},
-  {g:'지존꿀떡',n:'수텍',lv:105,p1:37594700000000,p0:19304900000000},
-  {g:'지존꿀떡',n:'수탉왕',lv:103,p1:27242200000000,p0:21331300000000},
-  {g:'지존꿀떡',n:'다누비',lv:102,p1:26047400000000,p0:22074400000000},
-  {g:'지존꿀떡',n:'온백',lv:105,p1:23460500000000,p0:18997200000000},
-  {g:'지존꿀떡',n:'전상봉',lv:102,p1:23618200000000,p0:18049300000000},
-  {g:'지존꿀떡',n:'유쁠러스',lv:102,p1:8529400000000,p0:5049800000000},
-  {g:'지존꿀떡',n:'포항가자미',lv:102,p1:14757000000000,p0:10843800000000},
-  {g:'지존꿀떡',n:'김허덕',lv:102,p1:9449600000000,p0:6425200000000},
-  {g:'지존꿀떡',n:'띵동이네',lv:103,p1:9593000000000,p0:6953900000000},
-  {g:'지존꿀떡',n:'LV1설치',lv:102,p1:5852400000000,p0:4188900000000},
-  {g:'지존꿀떡',n:'zl존포리',lv:102,p1:11056000000000,p0:8379300000000},
-  {g:'지존꿀떡',n:'뭘방',lv:103,p1:11314600000000,p0:8648800000000},
-  {g:'지존꿀떡',n:'도영너굴',lv:101,p1:11265600000000,p0:9343500000000},
-  {g:'지존꿀떡',n:'조쨩',lv:103,p1:7646400000000,p0:6290600000000},
-  {g:'지존꿀떡',n:'사울',lv:102,p1:6631500000000,p0:5377900000000},
-  {g:'지존꿀떡',n:'총보단활',lv:103,p1:6168500000000,p0:5078600000000},
-  {g:'지존꿀떡',n:'뉴유',lv:101,p1:6206500000000,p0:5005300000000},
-  {g:'지존꿀떡',n:'앱딴',lv:102,p1:5928900000000,p0:4991900000000},
-  {g:'지존꿀떡',n:'바개노',lv:100,p1:6014400000000,p0:4828000000000},
-  {g:'지존꿀떡',n:'겐귿',lv:102,p1:4394300000000,p0:3941400000000},
-  {g:'지존꿀떡',n:'황이',lv:101,p1:4021800000000,p0:3471700000000},
-  {g:'지존꿀떡',n:'홍애옹',lv:100,p1:2445600000000,p0:2374400000000},
-  {g:'지존꿀떡',n:'빵후',lv:102,p1:11595900000000,p0:10628500000000},
-  {g:'지존꿀떡',n:'KR#ABNYQE0CKO',lv:103,p1:8075500000000,p0:8075500000000},
-  {g:'지존꿀떡',n:'라이딩',lv:102,p1:7212900000000,p0:7212900000000},
-  {g:'지존좀쓴',n:'홍채은',lv:102,p1:38106200000000,p0:29446400000000},
-  {g:'지존좀쓴',n:'박준성',lv:102,p1:30664800000000,p0:19965000000000},
-  {g:'지존좀쓴',n:'월e',lv:103,p1:31812600000000,p0:27134500000000},
-  {g:'지존좀쓴',n:'지존딩표',lv:102,p1:25653800000000,p0:20974700000000},
-  {g:'지존좀쓴',n:'오옹나이스',lv:104,p1:25172900000000,p0:20946500000000},
-  {g:'지존좀쓴',n:'사우나지박령',lv:102,p1:24556800000000,p0:24446800000000},
-  {g:'지존좀쓴',n:'냐은',lv:102,p1:22363800000000,p0:14864400000000},
-  {g:'지존좀쓴',n:'쌀집아재',lv:102,p1:22019300000000,p0:16362200000000},
-  {g:'지존좀쓴',n:'김경',lv:102,p1:28064600000000,p0:14968000000000},
-  {g:'지존좀쓴',n:'민활',lv:104,p1:20654200000000,p0:14376900000000},
-  {g:'지존좀쓴',n:'진성팔퀴',lv:102,p1:20190600000000,p0:11942300000000},
-  {g:'지존좀쓴',n:'도둑창기병룩',lv:101,p1:18114700000000,p0:12279400000000},
-  {g:'지존좀쓴',n:'체리곽',lv:103,p1:18918600000000,p0:12203000000000},
-  {g:'지존좀쓴',n:'활쓰는바이퍼',lv:102,p1:15493000000000,p0:7721000000000},
-  {g:'지존좀쓴',n:'복실복실용구',lv:102,p1:12870700000000,p0:8613500000000},
-  {g:'지존좀쓴',n:'옹벵순',lv:103,p1:14212600000000,p0:10992100000000},
-  {g:'지존좀쓴',n:'지존달채',lv:101,p1:12630200000000,p0:9735500000000},
-  {g:'지존좀쓴',n:'태코찡',lv:103,p1:12295000000000,p0:10238300000000},
-  {g:'지존좀쓴',n:'지존웅',lv:102,p1:13139300000000,p0:11151800000000},
-  {g:'지존좀쓴',n:'살짝쿵o',lv:101,p1:11142800000000,p0:9202400000000},
-  {g:'지존좀쓴',n:'Mannerplayer',lv:102,p1:13568900000000,p0:13568900000000},
-  {g:'지존좀쓴',n:'혀기몬',lv:100,p1:10242600000000,p0:8686100000000},
-  {g:'지존좀쓴',n:'Gsap',lv:103,p1:11565000000000,p0:10576300000000},
-  {g:'지존좀쓴',n:'헤인즈42',lv:102,p1:11718300000000,p0:11236300000000},
-  {g:'지존좀쓴',n:'하늘성',lv:102,p1:10145000000000,p0:7231800000000},
-  {g:'지존좀쓴',n:'서엉주',lv:102,p1:8294200000000,p0:7130400000000},
-  {g:'지존좀쓴',n:'듀가나니',lv:102,p1:5242800000000,p0:4344100000000},
-  {g:'지존꿀잼',n:'지존코너',lv:104,p1:28219800000000,p0:23458600000000},
-  {g:'지존꿀잼',n:'벌크10코',lv:100,p1:3245600000000,p0:1803300000000},
-  {g:'지존꿀잼',n:'유스스팬3',lv:102,p1:11896400000000,p0:7279100000000},
-  {g:'지존꿀잼',n:'개코나',lv:100,p1:7317600000000,p0:5854100000000},
-  {g:'지존꿀잼',n:'진세진',lv:102,p1:6654300000000,p0:5745300000000},
-  {g:'지존꿀잼',n:'오존강',lv:100,p1:6252700000000,p0:5410000000000},
-  {g:'지존꿀잼',n:'보고파',lv:100,p1:4627800000000,p0:3611400000000},
-  {g:'지존꿀잼',n:'유압식',lv:101,p1:2503800000000,p0:1879100000000},
-  {g:'지존꿀잼',n:'댜니숍',lv:100,p1:2247200000000,p0:1583200000000},
-  {g:'지존꿀잼',n:'청결한인생',lv:101,p1:8774300000000,p0:7487100000000},
-  {g:'지존꿀잼',n:'조멍식',lv:100,p1:2664100000000,p0:2273700000000},
-  {g:'지존꿀잼',n:'멍왈멍왈',lv:99,p1:2360400000000,p0:2109800000000},
-  {g:'지존꿀잼',n:'탈북녀',lv:101,p1:1572800000000,p0:1245800000000},
-  {g:'지존꿀잼',n:'U플러스',lv:100,p1:1353400000000,p0:1056700000000},
-  {g:'지존꿀잼',n:'짞귀',lv:99,p1:1494400000000,p0:1255600000000},
-  {g:'지존꿀잼',n:'뾰뾱',lv:101,p1:1438100000000,p0:1307700000000},
-  {g:'지존꿀잼',n:'포동동주',lv:98,p1:1277000000000,p0:929141780000},
-  {g:'지존꿀잼',n:'해적당',lv:96,p1:628248570000,p0:414271650000},
-  {g:'지존꿀잼',n:'먹장어',lv:96,p1:469070310000,p0:226562770000},
-  {g:'지존꿀잼',n:'지존모짜',lv:97,p1:486294080000,p0:401930130000},
-  {g:'지존꿀잼',n:'두쫀쿠팔라딘',lv:95,p1:643179800000,p0:598099010000},
-  {g:'지존꿀잼',n:'U쁠러스',lv:98,p1:724866630000,p0:565139880000},
-  {g:'지존꿀잼',n:'지존큐티',lv:95,p1:163921440000,p0:94663950000},
-  {g:'지존꿀잼',n:'지존빵야',lv:90,p1:24710090000,p0:16608400000},
-  {g:'지존꿀잼',n:'제주칼치',lv:88,p1:41913640000,p0:6896980000},
-  {g:'지존꿀잼',n:'텟카이',lv:100,p1:5141400000000,p0:0},
+function calcRanks(arr, key) {
+  const ranked = [...arr].filter(d=>d[key]>0).sort((a,b)=>b[key]-a[key]);
+  const map = {};
+  ranked.forEach((d,i)=>{ map[d.nick]=i+1; });
+  return map;
+}
+
+function badgeCell(change, isNew) {
+  if (isNew)     return `<span class="rank-badge badge-new">NEW</span>`;
+  if (change>0)  return `<span class="rank-badge badge-up">▲ ${change}</span>`;
+  if (change<0)  return `<span class="rank-badge badge-dn">▼ ${Math.abs(change)}</span>`;
+  return `<span class="rank-badge badge-eq">—</span>`;
+}
+function pctTd(v) {
+  if (v===null||!isFinite(v)) return `<td class="neu">-</td>`;
+  return `<td class="${v>1?'pos':v<-1?'neg':'neu'}">${fmtP(v)}</td>`;
+}
+
+// 탭 전환
+document.querySelectorAll('.tab').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('panel-'+btn.dataset.tab).classList.add('active');
+  });
+});
+
+// ══════════════════════════════════════════════
+//  탭 1: 토벌전 점수
+// ══════════════════════════════════════════════
+const scoreData = [
+  {nick:'지존쫀파',    s628:87746060000,  s621:70408590000,  s614:56096430000,  s607:49391440000,  bp:282},
+  {nick:'포항엄석대',  s628:103271800000, s621:68725160000,  s614:64030250000,  s607:0,            bp:268},
+  {nick:'엘르가든',    s628:84674410000,  s621:54654030000,  s614:42127240000,  s607:32835680000,  bp:286},
+  {nick:'변신술사',    s628:70692400000,  s621:52857140000,  s614:37868360000,  s607:36042070000,  bp:125},
+  {nick:'마카롱롱',    s628:80336220000,  s621:46722510000,  s614:40245970000,  s607:33931080000,  bp:105},
+  {nick:'댜니',        s628:63051160000,  s621:46439070000,  s614:34195870000,  s607:30772810000,  bp:131},
+  {nick:'협의',        s628:62790770000,  s621:42596220000,  s614:42160470000,  s607:36439970000,  bp:194},
+  {nick:'기본이리',    s628:54573770000,  s621:41793820000,  s614:35236680000,  s607:29431030000,  bp:84},
+  {nick:'타개',        s628:55236830000,  s621:38511950000,  s614:35443500000,  s607:30330980000,  bp:87},
+  {nick:'지존순찌',    s628:36184950000,  s621:30375340000,  s614:30035130000,  s607:27055490000,  bp:114},
+  {nick:'온백',        s628:35025040000,  s621:29020550000,  s614:23081380000,  s607:23436530000,  bp:63},
+  {nick:'마갤',        s628:39135940000,  s621:28716610000,  s614:27189790000,  s607:24434660000,  bp:74},
+  {nick:'대좀이',      s628:38353560000,  s621:28563770000,  s614:25295420000,  s607:19933740000,  bp:67},
+  {nick:'파울',        s628:33836660000,  s621:28182470000,  s614:21460760000,  s607:18395860000,  bp:59},
+  {nick:'지존코너',    s628:39115110000,  s621:28037330000,  s614:22909760000,  s607:16975940000,  bp:65},
+  {nick:'모짜리코베르',s628:42853130000,  s621:26931640000,  s614:24041840000,  s607:20737390000,  bp:110},
+  {nick:'기뽐',        s628:33415790000,  s621:26482200000,  s614:25775320000,  s607:22292520000,  bp:107},
+  {nick:'태코찡',      s628:32080960000,  s621:26464040000,  s614:21633540000,  s607:18366690000,  bp:30},
+  {nick:'지존빼앙',    s628:29452630000,  s621:25376920000,  s614:18807840000,  s607:22781720000,  bp:186},
+  {nick:'오옹나이스',  s628:29118750000,  s621:24566660000,  s614:21461060000,  s607:20480010000,  bp:64},
+  {nick:'진성팔퀴',    s628:27346770000,  s621:24106030000,  s614:17035000000,  s607:14252170000,  bp:43},
+  {nick:'고숨도칭',    s628:26695620000,  s621:23773140000,  s614:23618170000,  s607:18407390000,  bp:55},
+  {nick:'월e',         s628:20674840000,  s621:22026150000,  s614:19014990000,  s607:14651580000,  bp:65},
+  {nick:'냐은',        s628:31012660000,  s621:21580650000,  s614:19433370000,  s607:14557150000,  bp:62},
+  {nick:'민활',        s628:25112400000,  s621:19704740000,  s614:17363330000,  s607:14878530000,  bp:70},
+  {nick:'Doham',       s628:24489940000,  s621:19594340000,  s614:17707280000,  s607:16275630000,  bp:54},
+  {nick:'전산봉',      s628:21156160000,  s621:18918680000,  s614:18630140000,  s607:13293250000,  bp:47},
+  {nick:'유플러스',    s628:20678070000,  s621:17997370000,  s614:16793670000,  s607:12497630000,  bp:47},
+  {nick:'뿡쓰',        s628:25115710000,  s621:17389940000,  s614:18945150000,  s607:18376480000,  bp:60},
+  {nick:'뉴럴',        s628:25092660000,  s621:0,            s614:16826070000,  s607:15887530000,  bp:61},
 ];
 
-const tobeolData = [
-  {g:'지존길드',n:'지존쫀파',lv:107,s1:56096430000,s0:49391440000},
-  {g:'지존길드',n:'협의',lv:107,s1:42160470000,s0:36439970000},
-  {g:'지존길드',n:'엘르가든',lv:105,s1:42127240000,s0:32835680000},
-  {g:'지존길드',n:'마카롱롱',lv:106,s1:40245970000,s0:33931080000},
-  {g:'지존길드',n:'변신술사',lv:106,s1:37868360000,s0:36042070000},
-  {g:'지존길드',n:'타개',lv:106,s1:35443500000,s0:30330980000},
-  {g:'지존길드',n:'기본이리',lv:106,s1:35236680000,s0:29431030000},
-  {g:'지존길드',n:'댜니',lv:105,s1:34195870000,s0:30772810000},
-  {g:'지존길드',n:'지존순찌',lv:105,s1:30035130000,s0:27055490000},
-  {g:'지존길드',n:'마갤',lv:105,s1:27189790000,s0:24434660000},
-  {g:'지존길드',n:'기뽐',lv:105,s1:25775320000,s0:22292520000},
-  {g:'지존길드',n:'모짜리코베르',lv:104,s1:24041840000,s0:20737390000},
-  {g:'지존길드',n:'고숨도칭',lv:103,s1:23618170000,s0:18407390000},
-  {g:'지존길드',n:'대좀이',lv:103,s1:25295420000,s0:19933740000},
-  {g:'지존길드',n:'파울',lv:104,s1:21460760000,s0:18395860000},
-  {g:'지존길드',n:'유플러스',lv:104,s1:16793670000,s0:12497630000},
-  {g:'지존길드',n:'미니주니',lv:103,s1:16595250000,s0:15121190000},
-  {g:'지존길드',n:'미래에셋생명',lv:104,s1:16474840000,s0:14031040000},
-  {g:'지존길드',n:'흐스',lv:104,s1:16282140000,s0:14286710000},
-  {g:'지존길드',n:'레인져보우',lv:101,s1:11050200000,s0:8465980000},
-  {g:'지존길드',n:'뉴럴',lv:104,s1:16826070000,s0:15887530000},
-  {g:'지존길드',n:'뿡쓰',lv:104,s1:18945150000,s0:18376480000},
-  {g:'지존길드',n:'지존빼앙',lv:105,s1:18807840000,s0:22781720000},
-  {g:'지존길드',n:'Doham',lv:103,s1:17707280000,s0:16275630000},
-  {g:'지존길드',n:'나나나난나',lv:103,s1:8541940000,s0:11590370000},
-  {g:'지존길드',n:'지존빵민',lv:103,s1:11635970000,s0:10076920000},
-  {g:'지존꿀떡',n:'수텍',lv:105,s1:39706630000,s0:33775290000},
-  {g:'지존꿀떡',n:'수탉왕',lv:103,s1:26829960000,s0:20458780000},
-  {g:'지존꿀떡',n:'온백',lv:105,s1:23081380000,s0:23436530000},
-  {g:'지존꿀떡',n:'전상봉',lv:102,s1:18630140000,s0:13293250000},
-  {g:'지존꿀떡',n:'포항가자미',lv:102,s1:16337450000,s0:15880210000},
-  {g:'지존꿀떡',n:'빵후',lv:102,s1:16701260000,s0:15286340000},
-  {g:'지존꿀떡',n:'zl존포리',lv:102,s1:15628990000,s0:14226370000},
-  {g:'지존꿀떡',n:'띵동이네',lv:103,s1:16234650000,s0:12936530000},
-  {g:'지존꿀떡',n:'KR#ABNYQE0CKO',lv:103,s1:14444390000,s0:13365690000},
-  {g:'지존꿀떡',n:'유쁠러스',lv:102,s1:12263380000,s0:10277220000},
-  {g:'지존꿀떡',n:'다누비',lv:102,s1:12228380000,s0:10872550000},
-  {g:'지존꿀떡',n:'도영너굴',lv:101,s1:11372050000,s0:10585160000},
-  {g:'지존꿀떡',n:'총보단활',lv:103,s1:11162060000,s0:10025600000},
-  {g:'지존꿀떡',n:'김허덕',lv:102,s1:11117900000,s0:11753730000},
-  {g:'지존꿀떡',n:'조쨩',lv:103,s1:10998370000,s0:10875500000},
-  {g:'지존꿀떡',n:'뉴유',lv:101,s1:10881160000,s0:10296300000},
-  {g:'지존꿀떡',n:'라이딩',lv:102,s1:12435180000,s0:11815580000},
-  {g:'지존꿀떡',n:'겐귿',lv:102,s1:9215240000,s0:9751740000},
-  {g:'지존꿀떡',n:'바개노',lv:100,s1:8042560000,s0:8787100000},
-  {g:'지존꿀떡',n:'황이',lv:101,s1:7849490000,s0:7614280000},
-  {g:'지존꿀떡',n:'사울',lv:102,s1:6728260000,s0:7066500000},
-  {g:'지존꿀떡',n:'앱딴',lv:102,s1:6331170000,s0:8183980000},
-  {g:'지존꿀떡',n:'LV1설치',lv:102,s1:8131580000,s0:7256520000},
-  {g:'지존좀쓴',n:'태코찡',lv:103,s1:21633540000,s0:18366690000},
-  {g:'지존좀쓴',n:'오옹나이스',lv:104,s1:21461060000,s0:20480010000},
-  {g:'지존좀쓴',n:'냐은',lv:102,s1:19433370000,s0:14557150000},
-  {g:'지존좀쓴',n:'지존딩표',lv:102,s1:19232650000,s0:18991350000},
-  {g:'지존좀쓴',n:'월e',lv:103,s1:19014990000,s0:14651580000},
-  {g:'지존좀쓴',n:'민활',lv:104,s1:17363330000,s0:14878530000},
-  {g:'지존좀쓴',n:'진성팔퀴',lv:102,s1:17035000000,s0:14252170000},
-  {g:'지존좀쓴',n:'도둑창기병룩',lv:101,s1:16837600000,s0:13429600000},
-  {g:'지존좀쓴',n:'쌀집아재',lv:102,s1:15690950000,s0:14252170000},
-  {g:'지존좀쓴',n:'하늘성',lv:102,s1:13027960000,s0:10460040000},
-  {g:'지존좀쓴',n:'복실복실용구',lv:102,s1:12879250000,s0:11433310000},
-  {g:'지존좀쓴',n:'지존웅',lv:102,s1:15335150000,s0:13691500000},
-  {g:'지존좀쓴',n:'박준성',lv:102,s1:14051940000,s0:12832950000},
-  {g:'지존좀쓴',n:'사우나지박령',lv:102,s1:13448180000,s0:13595620000},
-  {g:'지존좀쓴',n:'서엉주',lv:102,s1:12835960000,s0:12120880000},
-  {g:'지존좀쓴',n:'옹벵순',lv:103,s1:12586760000,s0:12100220000},
-  {g:'지존좀쓴',n:'지존달채',lv:101,s1:12772510000,s0:12332950000},
-  {g:'지존좀쓴',n:'살짝쿵o',lv:101,s1:10518930000,s0:9611960000},
-  {g:'지존좀쓴',n:'혀기몬',lv:100,s1:11249020000,s0:10034350000},
-  {g:'지존좀쓴',n:'체리곽',lv:103,s1:12355280000,s0:11440810000},
-  {g:'지존좀쓴',n:'Gsap',lv:103,s1:12246120000,s0:13952800000},
-  {g:'지존좀쓴',n:'활쓰는바이퍼',lv:102,s1:12189660000,s0:10045350000},
-  {g:'지존좀쓴',n:'홍채은',lv:102,s1:11511040000,s0:12536700000},
-  {g:'지존좀쓴',n:'김경',lv:102,s1:14310840000,s0:11133360000},
-  {g:'지존좀쓴',n:'Mannerplayer',lv:102,s1:11020110000,s0:11233310000},
-  {g:'지존좀쓴',n:'헤인즈42',lv:102,s1:8500440000,s0:11210520000},
-  {g:'지존좀쓴',n:'듀가나니',lv:102,s1:8480440000,s0:8336110000},
-  {g:'지존꿀잼',n:'지존코너',lv:104,s1:22909760000,s0:16975940000},
-  {g:'지존꿀잼',n:'유스스팬3',lv:102,s1:11760190000,s0:11686390000},
-  {g:'지존꿀잼',n:'진세진',lv:102,s1:10763440000,s0:8146050000},
-  {g:'지존꿀잼',n:'개코나',lv:100,s1:8273780000,s0:5441110000},
-  {g:'지존꿀잼',n:'보고파',lv:100,s1:6603280000,s0:5547210000},
-  {g:'지존꿀잼',n:'댜니숍',lv:100,s1:6697570000,s0:5357860000},
-  {g:'지존꿀잼',n:'텟카이',lv:100,s1:6657040000,s0:0},
+const sRank628 = calcRanks(scoreData,'s628');
+const sRank621 = calcRanks(scoreData,'s621');
+
+scoreData.forEach(d=>{
+  d.rank628 = sRank628[d.nick]??null;
+  d.rank621 = sRank621[d.nick]??null;
+  d.isNew   = !d.rank621;
+  d.rankChange = (!d.isNew&&d.rank628) ? d.rank621-d.rank628 : null;
+  d.g1 = pct(d.s614,d.s607);
+  d.g2 = pct(d.s621,d.s614);
+  d.g3 = pct(d.s628,d.s621);
+  const gs=[d.g1,d.g2,d.g3].filter(x=>x!==null&&isFinite(x));
+  d.gavg = gs.length ? gs.reduce((a,b)=>a+b,0)/gs.length : null;
+});
+
+const sg1 = scoreData.filter(d=>d.g1!==null&&isFinite(d.g1));
+const sg2 = scoreData.filter(d=>d.g2!==null&&isFinite(d.g2));
+const sg3 = scoreData.filter(d=>d.g3!==null&&isFinite(d.g3)&&d.s621>0);
+const sAvg1=sg1.reduce((s,d)=>s+d.g1,0)/sg1.length;
+const sAvg2=sg2.reduce((s,d)=>s+d.g2,0)/sg2.length;
+const sAvg3=sg3.reduce((s,d)=>s+d.g3,0)/sg3.length;
+
+const sUp=scoreData.filter(d=>!d.isNew&&d.rankChange>0).length;
+const sDn=scoreData.filter(d=>!d.isNew&&d.rankChange<0).length;
+const sEq=scoreData.filter(d=>!d.isNew&&d.rankChange===0).length;
+const sNew=scoreData.filter(d=>d.isNew).length;
+
+document.getElementById('score-metrics').innerHTML=`
+<div class="mc a1"><div class="mc-lbl">1주차 성장 (6/7→6/14)</div><div class="mc-val">${sAvg1.toFixed(1)}%</div><div class="mc-sub">${sg1.length}명 기준</div></div>
+<div class="mc a2"><div class="mc-lbl">2주차 성장 (6/14→6/21)</div><div class="mc-val">${sAvg2.toFixed(1)}%</div><div class="mc-sub">${sg2.length}명 기준</div></div>
+<div class="mc a3"><div class="mc-lbl">3주차 성장 (6/21→6/28)</div><div class="mc-val">${sAvg3.toFixed(1)}%</div><div class="mc-sub">${sg3.length}명 기준</div></div>
+<div class="mc a4"><div class="mc-lbl">등수 상승 / 하락 / 유지 / 신규</div>
+<div class="mc-val" style="font-size:14px;display:flex;gap:8px;align-items:center;margin-top:2px">
+  <span style="color:#34d39a">▲${sUp}</span><span style="color:#ff5f5f">▼${sDn}</span><span style="color:#6b7a99">—${sEq}</span><span style="color:#f5a623">N${sNew}</span>
+</div><div class="mc-sub">전주(6/21) 대비</div></div>`;
+
+new Chart(document.getElementById('score-growth-chart'),{
+  type:'bar',
+  data:{labels:['1주차 6/7→6/14','2주차 6/14→6/21','3주차 6/21→6/28'],
+    datasets:[{data:[+sAvg1.toFixed(2),+sAvg2.toFixed(2),+sAvg3.toFixed(2)],backgroundColor:['#5b7fff','#34d39a','#f5a623'],borderRadius:4}]},
+  options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+    scales:{y:{ticks:{callback:v=>v+'%',color:'#6b7a99',font:{size:10}},grid:{color:'rgba(255,255,255,0.05)'},border:{display:false}},
+            x:{ticks:{color:'#6b7a99',font:{size:10}},grid:{display:false},border:{display:false}}}}
+});
+
+const sTop15=[...scoreData].sort((a,b)=>b.s628-a.s628).slice(0,15);
+new Chart(document.getElementById('score-top-chart'),{
+  type:'bar',
+  data:{labels:sTop15.map(d=>d.nick),
+    datasets:[{data:sTop15.map(d=>+(d.s628/1e9).toFixed(1)),
+      backgroundColor:sTop15.map(d=>d.isNew?'#f5a62399':d.rankChange>0?'#34d39a99':d.rankChange<0?'#ff5f5f99':'#5b7fff99'),
+      borderColor:sTop15.map(d=>d.isNew?'#f5a623':d.rankChange>0?'#34d39a':d.rankChange<0?'#ff5f5f':'#5b7fff'),
+      borderWidth:1,borderRadius:3}]},
+  options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{display:false}},
+    scales:{x:{ticks:{callback:v=>v+'B',color:'#6b7a99',font:{size:10}},grid:{color:'rgba(255,255,255,0.05)'},border:{display:false}},
+            y:{ticks:{color:'#6b7a99',font:{size:9}},grid:{display:false},border:{display:false}}}}
+});
+
+// 점수 테이블
+const sCols=[
+  {key:'rank628',    label:'6/28 순위',  sort:(a,b)=>(a.rank628??99)-(b.rank628??99)},
+  {key:'rank621',    label:'6/21 순위',  sort:(a,b)=>(a.rank621??99)-(b.rank621??99)},
+  {key:'rankChange', label:'등락',       sort:(a,b)=>(b.rankChange??-99)-(a.rankChange??-99)},
+  {key:'nick',       label:'닉네임',     sort:(a,b)=>a.nick.localeCompare(b.nick)},
+  {key:'bp',         label:'전투력(조)', sort:(a,b)=>b.bp-a.bp},
+  {key:'s628',       label:'6/28 점수',  sort:(a,b)=>b.s628-a.s628},
+  {key:'s621',       label:'6/21 점수',  sort:(a,b)=>b.s621-a.s621},
+  {key:'s614',       label:'6/14 점수',  sort:(a,b)=>b.s614-a.s614},
+  {key:'s607',       label:'6/7 점수',   sort:(a,b)=>(b.s607||0)-(a.s607||0)},
+  {key:'g1',         label:'1주차 성장', sort:(a,b)=>(b.g1??-999)-(a.g1??-999)},
+  {key:'g2',         label:'2주차 성장', sort:(a,b)=>(b.g2??-999)-(a.g2??-999)},
+  {key:'g3',         label:'3주차 성장', sort:(a,b)=>(b.g3??-999)-(a.g3??-999)},
+  {key:'gavg',       label:'평균 성장',  sort:(a,b)=>(b.gavg??-999)-(a.gavg??-999)},
+];
+let sSortKey='rank628', sSortDir=1, sFilter='all';
+
+function renderScoreTable(){
+  let data=[...scoreData];
+  if(sFilter==='up')  data=data.filter(d=>!d.isNew&&d.rankChange>0);
+  if(sFilter==='dn')  data=data.filter(d=>!d.isNew&&d.rankChange<0);
+  if(sFilter==='eq')  data=data.filter(d=>!d.isNew&&d.rankChange===0);
+  if(sFilter==='new') data=data.filter(d=>d.isNew);
+  const sorted=[...data].sort(sCols.find(c=>c.key===sSortKey).sort);
+  if(sSortDir===1) sorted.reverse();
+  document.getElementById('score-thead').innerHTML='<tr>'+sCols.map(c=>`
+    <th class="${c.key===sSortKey?'sorted':''}" onclick="setSSort('${c.key}')">${c.label}${c.key===sSortKey?(sSortDir===1?' ↓':' ↑'):''}</th>`).join('')+'</tr>';
+  document.getElementById('score-tbody').innerHTML=sorted.map(d=>`<tr>
+    <td><strong style="color:${(d.rank628??99)<=10?'#fff':'var(--muted)'}">${d.rank628??'-'}</strong></td>
+    <td class="neu">${d.rank621??'—'}</td>
+    <td>${badgeCell(d.rankChange,d.isNew)}</td>
+    <td class="nick">${d.nick}</td>
+    <td class="neu">${d.bp}조</td>
+    <td>${fmtA(d.s628,'억')}</td>
+    <td class="neu">${fmtA(d.s621,'억')}</td>
+    <td class="neu">${fmtA(d.s614,'억')}</td>
+    <td class="neu">${fmtA(d.s607,'억')}</td>
+    ${pctTd(d.g1)}${pctTd(d.g2)}${pctTd(d.g3)}${pctTd(d.gavg)}
+  </tr>`).join('');
+}
+window.setSSort=key=>{if(sSortKey===key)sSortDir*=-1;else{sSortKey=key;sSortDir=1;}renderScoreTable();};
+document.getElementById('score-filters').addEventListener('click',e=>{
+  const b=e.target.closest('.fbtn');if(!b)return;
+  document.querySelectorAll('#score-filters .fbtn').forEach(x=>x.classList.remove('active'));
+  b.classList.add('active');sFilter=b.dataset.f;renderScoreTable();
+});
+renderScoreTable();
+
+
+// ══════════════════════════════════════════════
+//  탭 2: 전투력
+// ══════════════════════════════════════════════
+// 전투력 데이터: 6/29, 6/22, 6/15, 6/8 (조 단위 → 실제 숫자)
+const bpData = [
+  {nick:'엘르가든',    bp629:286719700000000, bp622:126501100000000, bp615:95897900000000,  bp608:68406300000000},
+  {nick:'지존쫀파',    bp629:282067800000000, bp622:169732300000000, bp615:119858900000000, bp608:91384200000000},
+  {nick:'포항엄석대',  bp629:268730200000000, bp622:172387000000000, bp615:131156300000000, bp608:0},
+  {nick:'협의',        bp629:194847300000000, bp622:116934700000000, bp615:91006600000000,  bp608:57547500000000},
+  {nick:'지존빼앙',    bp629:186220300000000, bp622:110375400000000, bp615:81858300000000,  bp608:65902000000000},
+  {nick:'댜니',        bp629:131265800000000, bp622:68661400000000,  bp615:49165100000000,  bp608:32882200000000},
+  {nick:'변신술사',    bp629:125649700000000, bp622:102479200000000, bp615:81121100000000,  bp608:81121100000000},
+  {nick:'지존순찌',    bp629:114441800000000, bp622:71470700000000,  bp615:63631200000000,  bp608:49892600000000},
+  {nick:'모짜리코베르',bp629:110012400000000, bp622:37417500000000,  bp615:30006500000000,  bp608:23892900000000},
+  {nick:'기뽐',        bp629:107902800000000, bp622:51199800000000,  bp615:35359900000000,  bp608:28392500000000},
+  {nick:'마카롱롱',    bp629:105116600000000, bp622:52266500000000,  bp615:44726600000000,  bp608:27733400000000},
+  {nick:'타개',        bp629:87132000000000,  bp622:48396900000000,  bp615:35240500000000,  bp608:24995100000000},
+  {nick:'기본이리',    bp629:84706100000000,  bp622:61562400000000,  bp615:44612700000000,  bp608:26502400000000},
+  {nick:'마갤',        bp629:74183100000000,  bp622:33686000000000,  bp615:29024500000000,  bp608:19977100000000},
+  {nick:'민활',        bp629:70520200000000,  bp622:37368600000000,  bp615:20654200000000,  bp608:14376900000000},
+  {nick:'대좀이',      bp629:67724200000000,  bp622:40538100000000,  bp615:31647500000000,  bp608:20821500000000},
+  {nick:'냐은',        bp629:62202500000000,  bp622:32746900000000,  bp615:22363800000000,  bp608:14864400000000},
+  {nick:'뉴럴',        bp629:61036000000000,  bp622:37268300000000,  bp615:29888000000000,  bp608:27079100000000},
+  {nick:'뿡쓰',        bp629:60096700000000,  bp622:39125600000000,  bp615:26071600000000,  bp608:23759500000000},
+  {nick:'파울',        bp629:59995200000000,  bp622:35209800000000,  bp615:20582300000000,  bp608:15264700000000},
+  {nick:'온백',        bp629:63634600000000,  bp622:32630200000000,  bp615:23460500000000,  bp608:18997200000000},
+  {nick:'월e',         bp629:65023900000000,  bp622:35341100000000,  bp615:31812600000000,  bp608:27134500000000},
+  {nick:'유플러스',    bp629:47268300000000,  bp622:23814100000000,  bp615:18247600000000,  bp608:11010700000000},
+  {nick:'전산봉',      bp629:47874900000000,  bp622:29631200000000,  bp615:23618200000000,  bp608:18049300000000},
+  {nick:'진성팔퀴',    bp629:43352600000000,  bp622:33307200000000,  bp615:20190600000000,  bp608:11942300000000},
+  {nick:'Doham',       bp629:54661800000000,  bp622:35746200000000,  bp615:28819900000000,  bp608:25185700000000},
+  {nick:'오옹나이스',  bp629:64590200000000,  bp622:28962200000000,  bp615:25172900000000,  bp608:20946500000000},
+  {nick:'지존코너',    bp629:65220100000000,  bp622:33780800000000,  bp615:28219800000000,  bp608:23458600000000},
+  {nick:'고숨도칭',    bp629:55040700000000,  bp622:34195500000000,  bp615:28308200000000,  bp608:21379400000000},
+  {nick:'태코찡',      bp629:30233200000000,  bp622:19413200000000,  bp615:12295000000000,  bp608:10238300000000},
 ];
 
-function fmtPower(n) {
-  if (!n) return '-';
-  const jo = Math.floor(n / 1e12);
-  const rem = n % 1e12;
-  const eok = Math.floor(rem / 1e8);
-  if (jo > 0 && eok > 0) return jo + '조 ' + eok.toLocaleString() + '억';
-  if (jo > 0) return jo + '조';
-  return eok.toLocaleString() + '억';
+const bRank629=calcRanks(bpData,'bp629');
+const bRank622=calcRanks(bpData,'bp622');
+
+bpData.forEach(d=>{
+  d.rank629=bRank629[d.nick]??null;
+  d.rank622=bRank622[d.nick]??null;
+  d.isNew=!d.rank622||d.bp608===0;
+  d.rankChange=(!d.isNew&&d.rank629)?d.rank622-d.rank629:null;
+  d.g1=pct(d.bp615,d.bp608);
+  d.g2=pct(d.bp622,d.bp615);
+  d.g3=pct(d.bp629,d.bp622);
+  const gs=[d.g1,d.g2,d.g3].filter(x=>x!==null&&isFinite(x));
+  d.gavg=gs.length?gs.reduce((a,b)=>a+b,0)/gs.length:null;
+});
+
+const bg1=bpData.filter(d=>d.g1!==null&&isFinite(d.g1));
+const bg2=bpData.filter(d=>d.g2!==null&&isFinite(d.g2));
+const bg3=bpData.filter(d=>d.g3!==null&&isFinite(d.g3)&&d.bp622>0);
+const bAvg1=bg1.reduce((s,d)=>s+d.g1,0)/bg1.length;
+const bAvg2=bg2.reduce((s,d)=>s+d.g2,0)/bg2.length;
+const bAvg3=bg3.reduce((s,d)=>s+d.g3,0)/bg3.length;
+
+const bUp=bpData.filter(d=>!d.isNew&&d.rankChange>0).length;
+const bDn=bpData.filter(d=>!d.isNew&&d.rankChange<0).length;
+const bEq=bpData.filter(d=>!d.isNew&&d.rankChange===0).length;
+const bNew=bpData.filter(d=>d.isNew).length;
+
+document.getElementById('bp-metrics').innerHTML=`
+<div class="mc a1"><div class="mc-lbl">1주차 전투력 성장 (6/8→6/15)</div><div class="mc-val">${bAvg1.toFixed(1)}%</div><div class="mc-sub">${bg1.length}명 기준</div></div>
+<div class="mc a2"><div class="mc-lbl">2주차 전투력 성장 (6/15→6/22)</div><div class="mc-val">${bAvg2.toFixed(1)}%</div><div class="mc-sub">${bg2.length}명 기준</div></div>
+<div class="mc a3"><div class="mc-lbl">3주차 전투력 성장 (6/22→6/29)</div><div class="mc-val">${bAvg3.toFixed(1)}%</div><div class="mc-sub">${bg3.length}명 기준</div></div>
+<div class="mc a4"><div class="mc-lbl">등수 상승 / 하락 / 유지 / 신규</div>
+<div class="mc-val" style="font-size:14px;display:flex;gap:8px;align-items:center;margin-top:2px">
+  <span style="color:#34d39a">▲${bUp}</span><span style="color:#ff5f5f">▼${bDn}</span><span style="color:#6b7a99">—${bEq}</span><span style="color:#f5a623">N${bNew}</span>
+</div><div class="mc-sub">전주(6/22) 대비</div></div>`;
+
+new Chart(document.getElementById('bp-growth-chart'),{
+  type:'bar',
+  data:{labels:['1주차 6/8→6/15','2주차 6/15→6/22','3주차 6/22→6/29'],
+    datasets:[{data:[+bAvg1.toFixed(2),+bAvg2.toFixed(2),+bAvg3.toFixed(2)],backgroundColor:['#5b7fff','#34d39a','#f5a623'],borderRadius:4}]},
+  options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+    scales:{y:{ticks:{callback:v=>v+'%',color:'#6b7a99',font:{size:10}},grid:{color:'rgba(255,255,255,0.05)'},border:{display:false}},
+            x:{ticks:{color:'#6b7a99',font:{size:10}},grid:{display:false},border:{display:false}}}}
+});
+
+const bTop15=[...bpData].sort((a,b)=>b.bp629-a.bp629).slice(0,15);
+new Chart(document.getElementById('bp-top-chart'),{
+  type:'bar',
+  data:{labels:bTop15.map(d=>d.nick),
+    datasets:[{data:bTop15.map(d=>+(d.bp629/1e12).toFixed(1)),
+      backgroundColor:bTop15.map(d=>d.isNew?'#f5a62399':d.rankChange>0?'#34d39a99':d.rankChange<0?'#ff5f5f99':'#5b7fff99'),
+      borderColor:bTop15.map(d=>d.isNew?'#f5a623':d.rankChange>0?'#34d39a':d.rankChange<0?'#ff5f5f':'#5b7fff'),
+      borderWidth:1,borderRadius:3}]},
+  options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{display:false},
+    tooltip:{callbacks:{label:ctx=>`${ctx.raw}조`}}},
+    scales:{x:{ticks:{callback:v=>v+'조',color:'#6b7a99',font:{size:10}},grid:{color:'rgba(255,255,255,0.05)'},border:{display:false}},
+            y:{ticks:{color:'#6b7a99',font:{size:9}},grid:{display:false},border:{display:false}}}}
+});
+
+// 전투력 테이블
+const bCols=[
+  {key:'rank629',    label:'6/29 순위',        sort:(a,b)=>(a.rank629??99)-(b.rank629??99)},
+  {key:'rank622',    label:'6/22 순위',        sort:(a,b)=>(a.rank622??99)-(b.rank622??99)},
+  {key:'rankChange', label:'등락',             sort:(a,b)=>(b.rankChange??-99)-(a.rankChange??-99)},
+  {key:'nick',       label:'닉네임',           sort:(a,b)=>a.nick.localeCompare(b.nick)},
+  {key:'bp629',      label:'6/29 전투력',      sort:(a,b)=>b.bp629-a.bp629},
+  {key:'bp622',      label:'6/22 전투력',      sort:(a,b)=>b.bp622-a.bp622},
+  {key:'bp615',      label:'6/15 전투력',      sort:(a,b)=>b.bp615-a.bp615},
+  {key:'bp608',      label:'6/8 전투력',       sort:(a,b)=>(b.bp608||0)-(a.bp608||0)},
+  {key:'g1',         label:'1주차 성장',       sort:(a,b)=>(b.g1??-999)-(a.g1??-999)},
+  {key:'g2',         label:'2주차 성장',       sort:(a,b)=>(b.g2??-999)-(a.g2??-999)},
+  {key:'g3',         label:'3주차 성장',       sort:(a,b)=>(b.g3??-999)-(a.g3??-999)},
+  {key:'gavg',       label:'평균 성장',        sort:(a,b)=>(b.gavg??-999)-(a.gavg??-999)},
+];
+let bSortKey='rank629', bSortDir=1, bFilter='all';
+
+const fmtBP = v => v>0 ? (v/1e12).toFixed(2)+'조' : '-';
+
+function renderBpTable(){
+  let data=[...bpData];
+  if(bFilter==='up')  data=data.filter(d=>!d.isNew&&d.rankChange>0);
+  if(bFilter==='dn')  data=data.filter(d=>!d.isNew&&d.rankChange<0);
+  if(bFilter==='eq')  data=data.filter(d=>!d.isNew&&d.rankChange===0);
+  if(bFilter==='new') data=data.filter(d=>d.isNew);
+  const sorted=[...data].sort(bCols.find(c=>c.key===bSortKey).sort);
+  if(bSortDir===1) sorted.reverse();
+  document.getElementById('bp-thead').innerHTML='<tr>'+bCols.map(c=>`
+    <th class="${c.key===bSortKey?'sorted':''}" onclick="setBSort('${c.key}')">${c.label}${c.key===bSortKey?(bSortDir===1?' ↓':' ↑'):''}</th>`).join('')+'</tr>';
+  document.getElementById('bp-tbody').innerHTML=sorted.map(d=>`<tr>
+    <td><strong style="color:${(d.rank629??99)<=10?'#fff':'var(--muted)'}">${d.rank629??'-'}</strong></td>
+    <td class="neu">${d.rank622??'—'}</td>
+    <td>${badgeCell(d.rankChange,d.isNew)}</td>
+    <td class="nick">${d.nick}</td>
+    <td>${fmtBP(d.bp629)}</td>
+    <td class="neu">${fmtBP(d.bp622)}</td>
+    <td class="neu">${fmtBP(d.bp615)}</td>
+    <td class="neu">${fmtBP(d.bp608)}</td>
+    ${pctTd(d.g1)}${pctTd(d.g2)}${pctTd(d.g3)}${pctTd(d.gavg)}
+  </tr>`).join('');
 }
-
-function fmtScore(n) {
-  if (!n) return '-';
-  const eok = Math.floor(n / 1e8);
-  const man = Math.floor((n % 1e8) / 1e4);
-  if (eok > 0 && man > 0) return eok.toLocaleString() + '억 ' + man.toLocaleString() + '만';
-  if (eok > 0) return eok.toLocaleString() + '억';
-  return Math.round(n / 1e4).toLocaleString() + '만';
-}
-
-function getRate(a, b) { if (!b) return null; return (a - b) / b; }
-
-function badge(r, isNew) {
-  if (isNew) return '<span class="badge badge-new">신규</span>';
-  if (r === null) return '<span class="badge badge-flat">-</span>';
-  if (r < -0.05) return '<span class="badge badge-down">▼ ' + (r*100).toFixed(1) + '%</span>';
-  if (r < 0.02)  return '<span class="badge badge-flat">→ ' + (r*100).toFixed(1) + '%</span>';
-  if (r < 0.2)   return '<span class="badge badge-up">▲ ' + (r*100).toFixed(1) + '%</span>';
-  return '<span class="badge badge-up-high">▲ ' + (r*100).toFixed(1) + '%</span>';
-}
-
-function barColor(r) {
-  if (r === null || r < 0) return '#f06073';
-  if (r < 0.1) return '#555c78';
-  if (r < 0.2) return '#4fc3a1';
-  return '#6c72f5';
-}
-
-function buildSummary(elId, data) {
-  const valid = data.filter(d => !d.isNew && d.r !== null);
-  const avg = valid.length ? valid.reduce((s,d)=>s+d.r,0)/valid.length : 0;
-  const top = valid.length ? valid.reduce((a,b)=>a.r>b.r?a:b) : null;
-  const downs = valid.filter(d=>d.r<0).length;
-  document.getElementById(elId).innerHTML = `
-    <div class="summary-card"><div class="val">${data.length}명</div><div class="lbl">전체 길드원</div></div>
-    <div class="summary-card"><div class="val" style="color:#4fc3a1;">${(avg*100).toFixed(1)}%</div><div class="lbl">평균 성장률</div></div>
-    <div class="summary-card"><div class="val" style="color:#6c72f5;font-size:16px;">${top ? top.n : '-'}</div><div class="lbl">최고 성장 ${top ? '(+' + (top.r*100).toFixed(1)+'%)' : ''}</div></div>
-    <div class="summary-card"><div class="val" style="color:#f06073;">${downs}명</div><div class="lbl">수치 감소</div></div>
-  `;
-}
-
-function buildRows(tbodyId, data, fmt1, fmt2) {
-  const maxR = Math.max(...data.filter(d=>!d.isNew&&d.r!==null).map(d=>Math.abs(d.r)), 0.01);
-  document.getElementById(tbodyId).innerHTML = data.map((d, i) => {
-    const barW = d.isNew ? 100 : d.r === null ? 0 : Math.min(100, (Math.abs(d.r)/maxR)*100);
-    const gc = guildColor[d.g] || '#888';
-    const v1 = fmt1 === 'power' ? fmtPower(d.p1 || d.s1) : fmtScore(d.s1);
-    const v0 = fmt1 === 'power' ? (d.p0 ? fmtPower(d.p0) : '-') : (d.s0 ? fmtScore(d.s0) : '-');
-    const val1 = d.p1 !== undefined ? d.p1 : d.s1;
-    const val0 = d.p0 !== undefined ? d.p0 : d.s0;
-    return `<tr>
-      <td class="rank-num">${i+1}</td>
-      <td><span class="guild-tag" style="border-color:${gc};color:${gc};">${d.g}</span></td>
-      <td class="nickname">${d.n}</td>
-      <td style="color:#555c78;">Lv.${d.lv}</td>
-      <td class="val-main">${fmtPower !== undefined && fmt1 === 'power' ? fmtPower(val1) : fmtScore(val1)}</td>
-      <td class="val-prev">${val0 ? (fmt1 === 'power' ? fmtPower(val0) : fmtScore(val0)) : '-'}</td>
-      <td><div class="bar-wrap"><div class="bar-bg"><div class="bar-fill" style="width:${barW.toFixed(1)}%;background:${d.isNew?'#6c72f5':barColor(d.r)};"></div></div></div></td>
-      <td>${badge(d.r, d.isNew)}</td>
-    </tr>`;
-  }).join('');
-}
-
-function renderPower() {
-  const gf = document.getElementById('filter-guild-power').value;
-  const sf = document.getElementById('sort-power').value;
-  let data = powerData
-    .filter(d => gf === 'all' || d.g === gf)
-    .map(d => ({...d, r: d.p0 === 0 ? null : getRate(d.p1, d.p0), isNew: d.p0 === 0}));
-  if (sf === 'rate-desc') data.sort((a,b)=>(b.isNew?2:(b.r??-99))-(a.isNew?2:(a.r??-99)));
-  else if (sf === 'rate-asc') data.sort((a,b)=>(a.isNew?99:(a.r??-99))-(b.isNew?99:(b.r??-99)));
-  else if (sf === 'power-desc') data.sort((a,b)=>b.p1-a.p1);
-  else data.sort((a,b)=>b.lv-a.lv);
-  buildSummary('summary-power', data);
-  buildRows('tbody-power', data, 'power');
-}
-
-function renderTobeol() {
-  const gf = document.getElementById('filter-guild-tobeol').value;
-  const sf = document.getElementById('sort-tobeol').value;
-  let data = tobeolData
-    .filter(d => gf === 'all' || d.g === gf)
-    .map(d => ({...d, r: d.s0 === 0 ? null : getRate(d.s1, d.s0), isNew: d.s0 === 0 && d.s1 > 0}));
-  if (sf === 'rate-desc') data.sort((a,b)=>(b.isNew?2:(b.r??-99))-(a.isNew?2:(a.r??-99)));
-  else if (sf === 'rate-asc') data.sort((a,b)=>(a.isNew?99:(a.r??-99))-(b.isNew?99:(b.r??-99)));
-  else if (sf === 'score-desc') data.sort((a,b)=>b.s1-a.s1);
-  else data.sort((a,b)=>b.lv-a.lv);
-  buildSummary('summary-tobeol', data);
-  buildRows('tbody-tobeol', data, 'tobeol');
-}
-
-function switchTab(tab) {
-  document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',(i===0&&tab==='power')||(i===1&&tab==='tobeol')));
-  document.getElementById('sec-power').classList.toggle('active', tab==='power');
-  document.getElementById('sec-tobeol').classList.toggle('active', tab==='tobeol');
-}
-
-renderPower();
-renderTobeol();
+window.setBSort=key=>{if(bSortKey===key)bSortDir*=-1;else{bSortKey=key;bSortDir=1;}renderBpTable();};
+document.getElementById('bp-filters').addEventListener('click',e=>{
+  const b=e.target.closest('.fbtn');if(!b)return;
+  document.querySelectorAll('#bp-filters .fbtn').forEach(x=>x.classList.remove('active'));
+  b.classList.add('active');bFilter=b.dataset.f;renderBpTable();
+});
+renderBpTable();
 </script>
 </body>
 </html>
